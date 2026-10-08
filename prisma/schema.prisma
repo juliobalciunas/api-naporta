@@ -1,0 +1,77 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum OrderStatus {
+  PENDING
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      UserRole @default(ADMIN)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Order {
+  id                    String      @id @default(uuid())
+  orderNumber           String      @unique @map("order_number")
+  status                OrderStatus @default(PENDING)
+  estimatedDeliveryDate DateTime    @map("estimated_delivery_date")
+
+  customerName          String      @map("customer_name")
+  customerDocument      String      @map("customer_document")
+
+  zipCode               String      @map("zip_code")
+  street                String
+  number                String
+  complement            String?
+  neighborhood          String
+  city                  String
+  state                 String
+  referencePoint        String?     @map("reference_point")
+
+  items                 OrderItem[]
+
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
+  deletedAt             DateTime?   @map("deleted_at")
+
+  @@index([orderNumber])
+  @@index([status])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String   @map("order_id")
+  description String
+  price       Float
+  quantity    Int      @default(1)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("order_items")
+}
